@@ -506,6 +506,11 @@ func (o *Option) Unmarshal(optionDefs map[OptionID]OptionDef, optionID OptionID,
 	return proc, nil
 }
 
+// String 返回 Option 的字符串表示
+func (o Option) String() string {
+	return fmt.Sprintf("ID:%s(%d) Value:%v(% 02X)", o.ID, o.ID, o.Value, o.ToBytes())
+}
+
 func parseOptionValue(optionID OptionID, valueBuf []byte) interface{} {
 	def := CoapOptionDefs[optionID]
 	if def.ValueFormat == ValueUnknown {
