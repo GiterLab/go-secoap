@@ -37,4 +37,6 @@ var (
 	ErrMessageNil            = errors.New("message is nil")
 	ErrMessageTruncated      = errors.New("message is truncated")
 	ErrMessageInvalidVersion = errors.New("message has invalid version")
+	ErrMessageInvalidRSUM8   = errors.New("message has invalid rsum8")
+	ErrInvalidRCRC16         = errors.New("message has invalid crc16")
 )

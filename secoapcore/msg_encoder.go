@@ -103,3 +103,13 @@ func GetEncoder(encoderTypeX string) (encoderType uint32, encoderID uint32) {
 	}
 	return encoderType, encoderID
 }
+
+// ValidateEID validates a message eid for Payload. (0 <= eid <= 15)
+func ValidateEID(eid int32) bool {
+	return eid >= 0 && eid <= (1<<4-1)
+}
+
+// ValidateETP validates a message etp for Payload. (0 <= etp <= 15)
+func ValidateETP(etp int32) bool {
+	return etp >= 0 && etp <= (1<<4-1)
+}

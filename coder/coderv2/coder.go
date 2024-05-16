@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package coderv1
+package coderv2
 
 import (
 	"encoding/binary"
@@ -30,7 +30,7 @@ func (c *Coder) Size(m secoapcore.Message) (int, error) {
 	if len(m.Token) > secoapcore.MaxTokenSize {
 		return -1, secoapcore.ErrInvalidTokenLen
 	}
-	size := 4 + len(m.Token)
+	size := 8 + len(m.Token)
 	payloadLen := len(m.Payload)
 	optionsLen, err := m.Opts.Marshal(nil)
 	if !errors.Is(err, secoapcore.ErrTooSmall) {
@@ -49,7 +49,9 @@ func (c *Coder) Encode(m secoapcore.Message, buf []byte) (int, error) {
 		 0                   1                   2                   3
 		 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 		+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		|0 1| T |  TKL  |      Code     |          Message ID           |
+		|1 0|  TKL  | T |  EID  |  ETP  |   CRC16                       |
+		+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		|   Message ID                  |   Code        |   RSUM8       |
 		+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 		|   Token (if any, TKL bytes) ...
 		+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -64,6 +66,12 @@ func (c *Coder) Encode(m secoapcore.Message, buf []byte) (int, error) {
 	if !secoapcore.ValidateType(m.Type) {
 		return -1, fmt.Errorf("invalid Type(%v)", m.Type)
 	}
+	if !secoapcore.ValidateEID(m.EncoderID) {
+		return -1, fmt.Errorf("invalid EncoderID(%v)", m.EncoderID)
+	}
+	if !secoapcore.ValidateETP(m.EncoderType) {
+		return -1, fmt.Errorf("invalid EncoderType(%v)", m.EncoderType)
+	}
 	size, err := c.Size(m)
 	if err != nil {
 		return -1, err
@@ -72,14 +80,22 @@ func (c *Coder) Encode(m secoapcore.Message, buf []byte) (int, error) {
 		return size, secoapcore.ErrTooSmall
 	}
 
+	m.Crc16 = secoapcore.CRC16Bytes(m.Payload)
+	tmpbufCRC16 := []byte{0, 0}
+	binary.BigEndian.PutUint16(tmpbufCRC16, m.Crc16)
+
 	tmpbufMessageID := []byte{0, 0}
 	binary.BigEndian.PutUint16(tmpbufMessageID, uint16(m.MessageID))
 
-	buf[0] = (1 << 6) | byte(m.Type)<<4 | byte(0xf&len(m.Token))
-	buf[1] = byte(m.Code)
-	buf[2] = tmpbufMessageID[0]
-	buf[3] = tmpbufMessageID[1]
-	buf = buf[4:]
+	buf[0] = (2 << 6) | (byte(0xf&len(m.Token)) << 2) | byte(m.Type)
+	buf[1] = byte(m.EncoderID<<4) | byte(m.EncoderType)
+	buf[2] = tmpbufCRC16[0]
+	buf[3] = tmpbufCRC16[1]
+	buf[4] = tmpbufMessageID[0]
+	buf[5] = tmpbufMessageID[1]
+	buf[6] = byte(m.Code)
+	buf[7] = 0x00 // 最后再计算RSUM8
+	buf = buf[8:]
 
 	if len(m.Token) > secoapcore.MaxTokenSize {
 		return -1, secoapcore.ErrInvalidTokenLen
@@ -107,23 +123,29 @@ func (c *Coder) Encode(m secoapcore.Message, buf []byte) (int, error) {
 
 func (c *Coder) Decode(data []byte, m *secoapcore.Message) (int, error) {
 	size := len(data)
-	if size < 4 {
+	if size < 8 {
 		return -1, secoapcore.ErrMessageTruncated
 	}
 
-	if data[0]>>6 != 1 { // version 1
+	if secoapcore.RSUM8(data) != 0 {
+		return -1, secoapcore.ErrMessageInvalidRSUM8
+	}
+
+	if data[0]>>6 != 2 { // version 2
 		return -1, secoapcore.ErrMessageInvalidVersion
 	}
 
-	typ := secoapcore.Type((data[0] >> 4) & 0x3)
-	tokenLen := int(data[0] & 0xf)
+	typ := secoapcore.Type(data[0] & 0x3)
+	tokenLen := int((data[0] >> 2) & 0xf)
 	if tokenLen > 8 {
 		return -1, secoapcore.ErrInvalidTokenLen
 	}
-
-	code := secoapcore.Code(data[1])
-	messageID := binary.BigEndian.Uint16(data[2:4])
-	data = data[4:]
+	eid := int32(data[1] >> 4)
+	etp := int32(data[1] & 0xf)
+	crc16 := binary.BigEndian.Uint16(data[2:4])
+	messageID := binary.BigEndian.Uint16(data[4:6])
+	code := secoapcore.Code(data[6])
+	data = data[8:]
 	if len(data) < tokenLen {
 		return -1, secoapcore.ErrMessageTruncated
 	}
@@ -149,6 +171,14 @@ func (c *Coder) Decode(data []byte, m *secoapcore.Message) (int, error) {
 
 	m.MessageID = int32(messageID)
 	m.Type = typ
+	m.EncoderID = eid
+	m.EncoderType = etp
+
+	m.Crc16 = crc16
+
+	if m.Crc16 != secoapcore.CRC16Bytes(m.Payload) {
+		return -1, secoapcore.ErrInvalidRCRC16
+	}
 
 	return size, nil
 }

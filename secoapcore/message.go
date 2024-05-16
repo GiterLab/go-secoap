@@ -23,7 +23,7 @@ import (
 // MaxTokenSize maximum of token size that can be used in message
 const MaxTokenSize = 8
 
-// Message is a CoAP message.
+// Message is a Secoap message.
 type Message struct {
 	Token   Token
 	Opts    Options
@@ -33,6 +33,14 @@ type Message struct {
 	// For DTLS and UDP messages
 	MessageID int32 // uint16 is valid, all other values are invalid, -1 is used for unset
 	Type      Type  // uint8 is valid, all other values are invalid, -1 is used for unset
+
+	// Additional fields
+	EncoderID   int32 // 4 bits is valid, all other values are invalid, -1 is used for unset
+	EncoderType int32 // 4 bits is valid, all other values are invalid, -1 is used for unset
+
+	// Checksum
+	Crc16 uint16
+	Rsum8 uint8
 }
 
 // IsConfirmable returns true if this message is confirmable.
