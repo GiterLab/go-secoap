@@ -12,36 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package secoap
+package secoapcore
 
 import (
 	"crypto/rand"
-	"encoding/binary"
-	"math"
-	"sync/atomic"
-	"time"
+	"encoding/hex"
+	"hash/crc64"
 )
 
-var weakRng = NewRand(time.Now().UnixNano())
+type Token []byte
 
-var msgID = uint32(RandMID())
-
-// GetMID generates a message id for UDP. (0 <= mid <= 65535)
-func GetMID() int32 {
-	return int32(uint16(atomic.AddUint32(&msgID, 1)))
+func (t Token) String() string {
+	return hex.EncodeToString(t)
 }
 
-func RandMID() int32 {
-	b := make([]byte, 4)
+func (t Token) Hash() uint64 {
+	return crc64.Checksum(t, crc64.MakeTable(crc64.ISO))
+}
+
+// GetToken generates a random token by a given length
+func GetToken() (Token, error) {
+	b := make(Token, 8)
 	_, err := rand.Read(b)
+	// Note that err == nil only if we read len(b) bytes.
 	if err != nil {
-		// fallback to cryptographically insecure pseudo-random generator
-		return int32(uint16(weakRng.Uint32() >> 16))
+		return nil, err
 	}
-	return int32(uint16(binary.BigEndian.Uint32(b)))
-}
 
-// ValidateMID validates a message id for UDP. (0 <= mid <= 65535)
-func ValidateMID(mid int32) bool {
-	return mid >= 0 && mid <= math.MaxUint16
+	return b, nil
 }

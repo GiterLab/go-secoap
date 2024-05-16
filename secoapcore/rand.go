@@ -12,32 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package secoap
+package secoapcore
 
 import (
-	"crypto/rand"
-	"encoding/hex"
-	"hash/crc64"
+	"math/rand"
+	"sync"
 )
 
-type Token []byte
-
-func (t Token) String() string {
-	return hex.EncodeToString(t)
+type Rand struct {
+	src  *rand.Rand
+	lock sync.Mutex
 }
 
-func (t Token) Hash() uint64 {
-	return crc64.Checksum(t, crc64.MakeTable(crc64.ISO))
-}
-
-// GetToken generates a random token by a given length
-func GetToken() (Token, error) {
-	b := make(Token, 8)
-	_, err := rand.Read(b)
-	// Note that err == nil only if we read len(b) bytes.
-	if err != nil {
-		return nil, err
+func NewRand(seed int64) *Rand {
+	return &Rand{
+		src: rand.New(rand.NewSource(seed)),
 	}
+}
 
-	return b, nil
+func (l *Rand) Int63() int64 {
+	l.lock.Lock()
+	val := l.src.Int63()
+	l.lock.Unlock()
+	return val
+}
+
+func (l *Rand) Uint32() uint32 {
+	l.lock.Lock()
+	val := l.src.Uint32()
+	l.lock.Unlock()
+	return val
 }

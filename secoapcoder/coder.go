@@ -12,26 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package secoap
+package secoapcoder
 
 import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+
+	"github.com/GiterLab/secoapcore"
 )
 
 var DefaultCoder = new(Coder)
 
 type Coder struct{}
 
-func (c *Coder) Size(m Message) (int, error) {
-	if len(m.Token) > MaxTokenSize {
-		return -1, ErrInvalidTokenLen
+func (c *Coder) Size(m secoapcore.Message) (int, error) {
+	if len(m.Token) > secoapcore.MaxTokenSize {
+		return -1, secoapcore.ErrInvalidTokenLen
 	}
 	size := 4 + len(m.Token)
 	payloadLen := len(m.Payload)
 	optionsLen, err := m.Opts.Marshal(nil)
-	if !errors.Is(err, ErrTooSmall) {
+	if !errors.Is(err, secoapcore.ErrTooSmall) {
 		return -1, err
 	}
 	if payloadLen > 0 {
@@ -42,7 +44,7 @@ func (c *Coder) Size(m Message) (int, error) {
 	return size, nil
 }
 
-func (c *Coder) Encode(m Message, buf []byte) (int, error) {
+func (c *Coder) Encode(m secoapcore.Message, buf []byte) (int, error) {
 	/*
 	     0                   1                   2                   3
 	    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -56,10 +58,10 @@ func (c *Coder) Encode(m Message, buf []byte) (int, error) {
 	   |1 1 1 1 1 1 1 1|    Payload (if any) ...
 	   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 	*/
-	if !ValidateMID(m.MessageID) {
+	if !secoapcore.ValidateMID(m.MessageID) {
 		return -1, fmt.Errorf("invalid MessageID(%v)", m.MessageID)
 	}
-	if !ValidateType(m.Type) {
+	if !secoapcore.ValidateType(m.Type) {
 		return -1, fmt.Errorf("invalid Type(%v)", m.Type)
 	}
 	size, err := c.Size(m)
@@ -67,7 +69,7 @@ func (c *Coder) Encode(m Message, buf []byte) (int, error) {
 		return -1, err
 	}
 	if len(buf) < size {
-		return size, ErrTooSmall
+		return size, secoapcore.ErrTooSmall
 	}
 
 	tmpbuf := []byte{0, 0}
@@ -79,8 +81,8 @@ func (c *Coder) Encode(m Message, buf []byte) (int, error) {
 	buf[3] = tmpbuf[1]
 	buf = buf[4:]
 
-	if len(m.Token) > MaxTokenSize {
-		return -1, ErrInvalidTokenLen
+	if len(m.Token) > secoapcore.MaxTokenSize {
+		return -1, secoapcore.ErrInvalidTokenLen
 	}
 	copy(buf, m.Token)
 	buf = buf[len(m.Token):]
@@ -88,7 +90,7 @@ func (c *Coder) Encode(m Message, buf []byte) (int, error) {
 	optionsLen, err := m.Opts.Marshal(buf)
 	switch {
 	case err == nil:
-	case errors.Is(err, ErrTooSmall):
+	case errors.Is(err, secoapcore.ErrTooSmall):
 		return size, err
 	default:
 		return -1, err
@@ -106,24 +108,24 @@ func (c *Coder) Encode(m Message, buf []byte) (int, error) {
 func (c *Coder) Decode(data []byte, m *Message) (int, error) {
 	size := len(data)
 	if size < 4 {
-		return -1, ErrMessageTruncated
+		return -1, secoapcore.ErrMessageTruncated
 	}
 
 	if data[0]>>6 != 1 {
-		return -1, ErrMessageInvalidVersion
+		return -1, secoapcore.ErrMessageInvalidVersion
 	}
 
 	typ := Type((data[0] >> 4) & 0x3)
 	tokenLen := int(data[0] & 0xf)
 	if tokenLen > 8 {
-		return -1, ErrInvalidTokenLen
+		return -1, secoapcore.ErrInvalidTokenLen
 	}
 
 	code := Code(data[1])
 	messageID := binary.BigEndian.Uint16(data[2:4])
 	data = data[4:]
 	if len(data) < tokenLen {
-		return -1, ErrMessageTruncated
+		return -1, secoapcore.ErrMessageTruncated
 	}
 	token := data[:tokenLen]
 	if len(token) == 0 {
@@ -131,7 +133,7 @@ func (c *Coder) Decode(data []byte, m *Message) (int, error) {
 	}
 	data = data[tokenLen:]
 
-	optionDefs := CoapOptionDefs
+	optionDefs := secoapcore.CoapOptionDefs
 	proc, err := m.Opts.Unmarshal(data, optionDefs)
 	if err != nil {
 		return -1, err

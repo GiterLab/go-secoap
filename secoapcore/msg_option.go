@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package secoap
+package secoapcore
 
 import (
 	"encoding/binary"
@@ -511,28 +511,3 @@ func (o Option) String() string {
 	return fmt.Sprintf("ID:%s(%d) Value:%v(% 02X)", o.ID, o.ID, o.Value, o.ToBytes())
 }
 
-func parseOptionValue(optionID OptionID, valueBuf []byte) interface{} {
-	def := CoapOptionDefs[optionID]
-	if def.ValueFormat == ValueUnknown {
-		// Skip unrecognized options (RFC7252 section 5.4.1)
-		return nil
-	}
-	if len(valueBuf) < def.MinLen || len(valueBuf) > def.MaxLen {
-		// Skip options with illegal value length (RFC7252 section 5.4.3)
-		return nil
-	}
-	switch def.ValueFormat {
-	case ValueUint:
-		intValue := decodeInt(valueBuf)
-		if optionID == ContentFormat || optionID == Accept {
-			return MediaType(intValue)
-		}
-		return intValue
-	case ValueString:
-		return string(valueBuf)
-	case ValueOpaque, ValueEmpty:
-		return valueBuf
-	}
-	// Skip unrecognized options (should never be reached)
-	return nil
-}
