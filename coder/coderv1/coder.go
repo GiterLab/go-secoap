@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package secoapcoder
+package coderv1
 
 import (
 	"encoding/binary"
 	"errors"
 	"fmt"
 
-	"github.com/GiterLab/secoapcore"
+	"github.com/GiterLab/go-secoap/secoapcore"
 )
 
 var DefaultCoder = new(Coder)
@@ -105,7 +105,7 @@ func (c *Coder) Encode(m secoapcore.Message, buf []byte) (int, error) {
 	return size, nil
 }
 
-func (c *Coder) Decode(data []byte, m *Message) (int, error) {
+func (c *Coder) Decode(data []byte, m *secoapcore.Message) (int, error) {
 	size := len(data)
 	if size < 4 {
 		return -1, secoapcore.ErrMessageTruncated
@@ -115,13 +115,13 @@ func (c *Coder) Decode(data []byte, m *Message) (int, error) {
 		return -1, secoapcore.ErrMessageInvalidVersion
 	}
 
-	typ := Type((data[0] >> 4) & 0x3)
+	typ := secoapcore.Type((data[0] >> 4) & 0x3)
 	tokenLen := int(data[0] & 0xf)
 	if tokenLen > 8 {
 		return -1, secoapcore.ErrInvalidTokenLen
 	}
 
-	code := Code(data[1])
+	code := secoapcore.Code(data[1])
 	messageID := binary.BigEndian.Uint16(data[2:4])
 	data = data[4:]
 	if len(data) < tokenLen {

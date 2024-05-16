@@ -34,6 +34,7 @@ var (
 	ErrOptionNotFound               = errors.New("option not found")
 	ErrOptionDuplicate              = errors.New("duplicated option")
 
+	ErrMessageNil            = errors.New("message is nil")
 	ErrMessageTruncated      = errors.New("message is truncated")
 	ErrMessageInvalidVersion = errors.New("message has invalid version")
 )
