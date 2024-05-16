@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gosecoap
+package secoap
 
 import (
 	"context"
@@ -20,6 +20,13 @@ import (
 	"github.com/GiterLab/go-secoap/coder/coderv1"
 	"github.com/GiterLab/go-secoap/message"
 	"github.com/GiterLab/go-secoap/secoapcore"
+)
+
+const (
+	// Version0 版本0
+	Version0 = 0
+	// Version1 版本1
+	Version1 = 1
 )
 
 // Secoap Secoap协议实例
@@ -66,8 +73,8 @@ func (s *Secoap) Marshal() ([]byte, error) {
 		return nil, secoapcore.ErrMessageNil
 	}
 	switch s.Version {
-	case 0:
-	case 1:
+	case Version0:
+	case Version1:
 		encoder = coderv1.DefaultCoder
 	default:
 		return nil, secoapcore.ErrMessageInvalidVersion
@@ -83,8 +90,8 @@ func (s *Secoap) Unmarshal(data []byte) (int, error) {
 		return 0, secoapcore.ErrMessageNil
 	}
 	switch s.Version {
-	case 0:
-	case 1:
+	case Version0:
+	case Version1:
 		decoder = coderv1.DefaultCoder
 	default:
 		return 0, secoapcore.ErrMessageInvalidVersion
