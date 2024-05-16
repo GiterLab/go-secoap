@@ -118,6 +118,9 @@ func (c *Coder) Encode(m secoapcore.Message, buf []byte) (int, error) {
 		buf = buf[1:]
 	}
 	copy(buf, m.Payload)
+
+	buf[7] = secoapcore.RSUM8(buf[:size]) // 计算RSUM8后填充
+
 	return size, nil
 }
 
