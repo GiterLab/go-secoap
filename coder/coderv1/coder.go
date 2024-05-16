@@ -143,6 +143,7 @@ func (c *Coder) Decode(data []byte, m *secoapcore.Message) (int, error) {
 		data = nil
 	}
 
+	m.Ver = secoapcore.Version1
 	m.Token = token
 	m.Code = code
 	m.Payload = data

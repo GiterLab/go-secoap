@@ -25,6 +25,7 @@ const MaxTokenSize = 8
 
 // Message is a Secoap message.
 type Message struct {
+	Ver     Ver
 	Token   Token
 	Opts    Options
 	Code    Code
@@ -130,7 +131,7 @@ func (m *Message) String() string {
 	if m == nil {
 		return "nil"
 	}
-	buf := fmt.Sprintf("Code: %v, Token: %v", m.Code, m.Token)
+	buf := fmt.Sprintf("Ver: %v, Code: %v, Token: %v", m.Ver, m.Code, m.Token)
 	path, err := m.Opts.Path()
 	if err == nil {
 		buf = fmt.Sprintf("%s, Path: %v", buf, path)
@@ -148,6 +149,12 @@ func (m *Message) String() string {
 	}
 	if ValidateMID(m.MessageID) {
 		buf = fmt.Sprintf("%s, MessageID: %v", buf, m.MessageID)
+	}
+	if ValidateEID(m.EncoderID) {
+		buf = fmt.Sprintf("%s, EncoderID: %v", buf, m.EncoderID)
+	}
+	if ValidateETP(m.EncoderType) {
+		buf = fmt.Sprintf("%s, EncoderType: %v", buf, m.EncoderType)
 	}
 	if len(m.Payload) > 0 {
 		buf = fmt.Sprintf("%s, PayloadLen: %v", buf, len(m.Payload))

@@ -87,23 +87,24 @@ func (c *Coder) Encode(m secoapcore.Message, buf []byte) (int, error) {
 	tmpbufMessageID := []byte{0, 0}
 	binary.BigEndian.PutUint16(tmpbufMessageID, uint16(m.MessageID))
 
-	buf[0] = (2 << 6) | (byte(0xf&len(m.Token)) << 2) | byte(m.Type)
-	buf[1] = byte(m.EncoderID<<4) | byte(m.EncoderType)
-	buf[2] = tmpbufCRC16[0]
-	buf[3] = tmpbufCRC16[1]
-	buf[4] = tmpbufMessageID[0]
-	buf[5] = tmpbufMessageID[1]
-	buf[6] = byte(m.Code)
-	buf[7] = 0x00 // 最后再计算RSUM8
-	buf = buf[8:]
+	pbuf := buf
+	pbuf[0] = (2 << 6) | (byte(0xf&len(m.Token)) << 2) | byte(m.Type)
+	pbuf[1] = byte(m.EncoderID<<4) | byte(m.EncoderType)
+	pbuf[2] = tmpbufCRC16[0]
+	pbuf[3] = tmpbufCRC16[1]
+	pbuf[4] = tmpbufMessageID[0]
+	pbuf[5] = tmpbufMessageID[1]
+	pbuf[6] = byte(m.Code)
+	pbuf[7] = 0x00 // 最后再计算RSUM8
+	pbuf = pbuf[8:]
 
 	if len(m.Token) > secoapcore.MaxTokenSize {
 		return -1, secoapcore.ErrInvalidTokenLen
 	}
-	copy(buf, m.Token)
-	buf = buf[len(m.Token):]
+	copy(pbuf, m.Token)
+	pbuf = pbuf[len(m.Token):]
 
-	optionsLen, err := m.Opts.Marshal(buf)
+	optionsLen, err := m.Opts.Marshal(pbuf)
 	switch {
 	case err == nil:
 	case errors.Is(err, secoapcore.ErrTooSmall):
@@ -111,15 +112,15 @@ func (c *Coder) Encode(m secoapcore.Message, buf []byte) (int, error) {
 	default:
 		return -1, err
 	}
-	buf = buf[optionsLen:]
+	pbuf = pbuf[optionsLen:]
 
 	if len(m.Payload) > 0 {
-		buf[0] = 0xff // payload separator
-		buf = buf[1:]
+		pbuf[0] = 0xff // payload separator
+		pbuf = pbuf[1:]
 	}
-	copy(buf, m.Payload)
+	copy(pbuf, m.Payload)
 
-	buf[7] = secoapcore.RSUM8(buf[:size]) // 计算RSUM8后填充
+	buf[7] = secoapcore.RSUM8(buf[0:size]) // 计算RSUM8后填充
 
 	return size, nil
 }
@@ -168,6 +169,7 @@ func (c *Coder) Decode(data []byte, m *secoapcore.Message) (int, error) {
 		data = nil
 	}
 
+	m.Ver = secoapcore.Version2
 	m.Token = token
 	m.Code = code
 	m.Payload = data
