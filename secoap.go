@@ -23,10 +23,9 @@ import (
 )
 
 const (
-	// Version0 版本0
-	Version0 = 0
-	// Version1 版本1
-	Version1 = 1
+	Version0 = 0 // Version0 版本0，私有SECOAP协议
+	Version1 = 1 // Version1 版本1，标准COAP协议
+	Version2 = 2 // Version2 版本2，私有SECOAP协议, 默认使用此协议
 )
 
 // Secoap Secoap协议实例
@@ -39,8 +38,8 @@ type Secoap struct {
 
 // NewSecoap 创建一个Secoap协议实例
 func NewSecoap(ver uint8) *Secoap {
-	if ver > 1 {
-		return nil
+	if ver > 2 {
+		ver = Version2
 	}
 	ctx := context.Background()
 	return &Secoap{
@@ -76,6 +75,7 @@ func (s *Secoap) Marshal() ([]byte, error) {
 	case Version0:
 	case Version1:
 		encoder = coderv1.DefaultCoder
+	case Version2:
 	default:
 		return nil, secoapcore.ErrMessageInvalidVersion
 	}
@@ -93,6 +93,7 @@ func (s *Secoap) Unmarshal(data []byte) (int, error) {
 	case Version0:
 	case Version1:
 		decoder = coderv1.DefaultCoder
+	case Version2:
 	default:
 		return 0, secoapcore.ErrMessageInvalidVersion
 	}
