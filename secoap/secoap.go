@@ -26,7 +26,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: secoap \"payload>\"")
+		fmt.Println("Usage: secoap \"payload(Hex)\"")
 		os.Exit(1)
 	}
 
