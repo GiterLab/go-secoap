@@ -59,3 +59,12 @@ func ToVer(v string) (Ver, error) {
 func ValidateVer(typ Ver) bool {
 	return typ >= 0 && typ <= (1<<2-1)
 }
+
+// GetVersion gets the version from the payload.
+func GetVersion(payload []byte) (ver Ver, err error) {
+	if len(payload) == 0 {
+		return 0, errors.New("empty payload")
+	}
+	ver = Ver(payload[0] >> 6)
+	return ver, nil
+}

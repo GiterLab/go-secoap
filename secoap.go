@@ -17,6 +17,7 @@ package secoap
 import (
 	"context"
 
+	"github.com/GiterLab/go-secoap/coder/coderv0"
 	"github.com/GiterLab/go-secoap/coder/coderv1"
 	"github.com/GiterLab/go-secoap/coder/coderv2"
 	"github.com/GiterLab/go-secoap/message"
@@ -74,6 +75,7 @@ func (s *Secoap) Marshal() ([]byte, error) {
 	}
 	switch s.Version {
 	case Version0:
+		encoder = coderv0.DefaultCoder
 	case Version1:
 		encoder = coderv1.DefaultCoder
 	case Version2:
@@ -93,6 +95,7 @@ func (s *Secoap) Unmarshal(data []byte) (int, error) {
 	}
 	switch s.Version {
 	case Version0:
+		decoder = coderv0.DefaultCoder
 	case Version1:
 		decoder = coderv1.DefaultCoder
 	case Version2:

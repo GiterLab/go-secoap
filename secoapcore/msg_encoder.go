@@ -32,7 +32,7 @@ const (
 )
 
 // GetEncoderType 获取协议 Payload 编码类型, coap协议默认是 application/protobuf
-func GetEncoderType(encoderType uint32, encoderID uint32) string {
+func GetEncoderType(encoderType int32, encoderID int32) string {
 	switch encoderType {
 	case 0:
 		switch encoderID {
@@ -74,7 +74,7 @@ func GetEncoderType(encoderType uint32, encoderID uint32) string {
 }
 
 // GetEncoder 根据编码器，获取对应的编码类型
-func GetEncoder(encoderTypeX string) (encoderType uint32, encoderID uint32) {
+func GetEncoder(encoderTypeX string) (encoderType int32, encoderID int32) {
 	switch encoderTypeX {
 	case EncoderTypeNoneUserDefine: // none/userdefine
 		encoderType = 0

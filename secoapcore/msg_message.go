@@ -15,6 +15,7 @@
 package secoapcore
 
 import (
+	"encoding/binary"
 	"fmt"
 	"reflect"
 	"strings"
@@ -193,7 +194,28 @@ func (m *Message) Analyse() string {
 
 	switch m.Ver {
 	case Version0:
-		return "Version 0 is not supported"
+		tmpbufCRC16 := []byte{0, 0}
+		binary.BigEndian.PutUint16(tmpbufCRC16, m.Crc16)
+		crc16 := binary.LittleEndian.Uint16(tmpbufCRC16)
+
+		out = fmt.Sprintf(`
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |V %d|R|R|R|R|T %d|EID: %d |ETP: %d |CRC16: 0x%04X                  |
+   |%v|0 0 0 0|%v|%v|%v|%v|
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |Payload: HEX(%d)
+   | %v`,
+			m.Ver, m.Type, m.EncoderID, m.EncoderType, m.Crc16,
+			bf(int(m.Ver), 2),
+			bf(int(m.Type), 2),
+			bf(int(m.EncoderID), 4),
+			bf(int(m.EncoderType), 4),
+			bf(int(crc16), 16),
+			len(m.Payload),
+			nilf(m.Payload))
+
 	case Version1:
 		out = fmt.Sprintf(`
     0                   1                   2                   3
@@ -202,7 +224,7 @@ func (m *Message) Analyse() string {
    |V %d|T %d|TKL: %d |Code: %3d      |Message ID: 0x%04X             |
    |%v|%v|%v|%v|%v|
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |Token: (if any) ... HEX
+   |Token: (if any) ... HEX(%d)
    | %v
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
    |Options (if any) ... HEX
@@ -210,7 +232,7 @@ func (m *Message) Analyse() string {
    |
    | %v
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |SEP: 0xFF      |Payload: HEX
+   |SEP: 0xFF      |Payload: HEX(%d)
    |%v| %v`,
 			m.Ver, m.Type, len(m.Token), m.Code, m.MessageID,
 			bf(int(m.Ver), 2),
@@ -218,9 +240,11 @@ func (m *Message) Analyse() string {
 			bf(int(len(m.Token)), 4),
 			bf(int(m.Code), 8),
 			bf(int(m.MessageID), 16),
+			len(m.Token),
 			nilf(m.Token),
 			m.Opts.URL(),
 			m.Opts.String("\n   | "),
+			len(m.Payload),
 			bf(int(0xFF), 8),
 			nilf(m.Payload))
 
@@ -235,7 +259,7 @@ func (m *Message) Analyse() string {
    |Message ID: 0x%04X             |Code: %3d      |RSUM8: 0x%02X    |
    |%v|%v|%v|
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |Token: (if any) ... HEX
+   |Token: (if any) ... HEX(%d)
    | %v
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
    |Options (if any) ... HEX
@@ -243,7 +267,7 @@ func (m *Message) Analyse() string {
    |
    | %v
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |SEP: 0xFF      |Payload: HEX
+   |SEP: 0xFF      |Payload: HEX(%d)
    |%v| %v`,
 			m.Ver, len(m.Token), m.Type, m.EncoderID, m.EncoderType, m.Crc16,
 			bf(int(m.Ver), 2),
@@ -256,9 +280,11 @@ func (m *Message) Analyse() string {
 			bf(int(m.MessageID), 16),
 			bf(int(m.Code), 8),
 			bf(int(m.Rsum8), 8),
+			len(m.Token),
 			nilf(m.Token),
 			m.Opts.URL(),
 			m.Opts.String("\n   | "),
+			len(m.Payload),
 			bf(int(0xFF), 8),
 			nilf(m.Payload))
 	}
