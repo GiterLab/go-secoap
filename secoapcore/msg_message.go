@@ -161,3 +161,107 @@ func (m *Message) String() string {
 	}
 	return buf
 }
+
+// Anlayse 协议分析
+func (m *Message) Analyse() string {
+	var out string
+
+	if m == nil {
+		return "nil"
+	}
+
+	bf := func(num int, bits int) string {
+		layout := fmt.Sprintf("%%0%db", bits)
+
+		binaryStr := fmt.Sprintf(layout, num)
+		// 使用bit位计数来插入空格
+		spacedBinaryStr := ""
+		for _, char := range binaryStr {
+			spacedBinaryStr += string(char) + " "
+		}
+		// 移除末尾的空格
+		spacedBinaryStr = spacedBinaryStr[:len(spacedBinaryStr)-1]
+		return spacedBinaryStr
+	}
+
+	nilf := func(v []byte) interface{} {
+		if len(v) == 0 {
+			return "Empty"
+		}
+		return fmt.Sprintf("% 02X", v)
+	}
+
+	switch m.Ver {
+	case Version0:
+		return "Version 0 is not supported"
+	case Version1:
+		out = fmt.Sprintf(`
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |V %d|T %d|TKL: %d |Code: %3d      |Message ID: 0x%04X             |
+   |%v|%v|%v|%v|%v|
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |Token: (if any) ... HEX
+   | %v
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |Options (if any) ... HEX
+   | Path: %v
+   |
+   | %v
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |SEP: 0xFF      |Payload: HEX
+   |%v| %v`,
+			m.Ver, m.Type, len(m.Token), m.Code, m.MessageID,
+			bf(int(m.Ver), 2),
+			bf(int(m.Type), 2),
+			bf(int(len(m.Token)), 4),
+			bf(int(m.Code), 8),
+			bf(int(m.MessageID), 16),
+			nilf(m.Token),
+			m.Opts.URL(),
+			m.Opts.String("\n   | "),
+			bf(int(0xFF), 8),
+			nilf(m.Payload))
+
+	case Version2:
+		out = fmt.Sprintf(`
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |V %d|TKL: %d |T %d|EID: %d |ETP: %d |CRC16: 0x%04X                  |
+   |%v|%v|%v|%v|%v|%v|
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |Message ID: 0x%04X             |Code: %3d      |RSUM8: 0x%02X    |
+   |%v|%v|%v|
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |Token: (if any) ... HEX
+   | %v
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |Options (if any) ... HEX
+   | Path: %v
+   |
+   | %v
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |SEP: 0xFF      |Payload: HEX
+   |%v| %v`,
+			m.Ver, len(m.Token), m.Type, m.EncoderID, m.EncoderType, m.Crc16,
+			bf(int(m.Ver), 2),
+			bf(int(len(m.Token)), 4),
+			bf(int(m.Type), 2),
+			bf(int(m.EncoderID), 4),
+			bf(int(m.EncoderType), 4),
+			bf(int(m.Crc16), 16),
+			m.MessageID, m.Code, m.Rsum8,
+			bf(int(m.MessageID), 16),
+			bf(int(m.Code), 8),
+			bf(int(m.Rsum8), 8),
+			nilf(m.Token),
+			m.Opts.URL(),
+			m.Opts.String("\n   | "),
+			bf(int(0xFF), 8),
+			nilf(m.Payload))
+	}
+
+	return out
+}

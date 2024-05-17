@@ -674,3 +674,27 @@ func (options Options) Clone() (Options, error) {
 	}
 	return opts, nil
 }
+
+// URL returns the URL of the options.
+func (options Options) URL() string {
+	path, err := options.Path()
+	if err != nil {
+		return ""
+	}
+	queries, err := options.Queries()
+	if err != nil {
+		return path
+	}
+	return path + "?" + strings.Join(queries, "&")
+}
+
+func (options Options) String(sep string) string {
+	var sb strings.Builder
+	for _, o := range options {
+		sb.WriteString(o.String())
+		if sep != "" {
+			sb.WriteString(sep)
+		}
+	}
+	return sb.String()
+}

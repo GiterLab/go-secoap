@@ -131,6 +131,7 @@ func (c *Coder) Decode(data []byte, m *secoapcore.Message) (int, error) {
 		return -1, secoapcore.ErrMessageTruncated
 	}
 
+	rsum8 := data[7]
 	if secoapcore.RSUM8(data) != 0 {
 		return -1, secoapcore.ErrMessageInvalidRSUM8
 	}
@@ -180,10 +181,10 @@ func (c *Coder) Decode(data []byte, m *secoapcore.Message) (int, error) {
 	m.EncoderType = etp
 
 	m.Crc16 = crc16
-
 	if m.Crc16 != secoapcore.CRC16Bytes(m.Payload) {
 		return -1, secoapcore.ErrInvalidRCRC16
 	}
+	m.Rsum8 = rsum8
 
 	return size, nil
 }

@@ -86,6 +86,23 @@ func (r *Message) SetMessage(message secoapcore.Message) {
 	r.isModified = true
 }
 
+func (r *Message) Version() secoapcore.Ver {
+	return r.msg.Ver
+}
+
+func (r *Message) UpsertVersion(ver secoapcore.Ver) {
+	if secoapcore.ValidateVer(ver) {
+		return
+	}
+	r.SetVersion(ver)
+}
+
+// SetVersion only 0 to 2^2-1 are valid.
+func (r *Message) SetVersion(ver secoapcore.Ver) {
+	r.msg.Ver = ver
+	r.isModified = true
+}
+
 // SetMessageID only 0 to 2^16-1 are valid.
 func (r *Message) SetMessageID(mid int32) {
 	r.msg.MessageID = mid
@@ -120,6 +137,38 @@ func (r *Message) UpsertType(typ secoapcore.Type) {
 
 func (r *Message) Type() secoapcore.Type {
 	return r.msg.Type
+}
+
+func (r *Message) SetEncoderID(eid int32) {
+	r.msg.EncoderID = eid
+	r.isModified = true
+}
+
+func (r *Message) UpsertEncoderID(eid int32) {
+	if secoapcore.ValidateEID(r.msg.EncoderID) {
+		return
+	}
+	r.SetEncoderID(eid)
+}
+
+func (r *Message) EncoderID() int32 {
+	return r.msg.EncoderID
+}
+
+func (r *Message) SetEncoderType(etp int32) {
+	r.msg.EncoderType = etp
+	r.isModified = true
+}
+
+func (r *Message) UpsertEncoderType(etp int32) {
+	if secoapcore.ValidateETP(r.msg.EncoderType) {
+		return
+	}
+	r.SetEncoderType(etp)
+}
+
+func (r *Message) EncoderType() int32 {
+	return r.msg.EncoderType
 }
 
 // Reset clear message for next reuse
@@ -458,6 +507,10 @@ func (r *Message) SetModified(b bool) {
 
 func (r *Message) String() string {
 	return r.msg.String()
+}
+
+func (r *Message) Analyse() string {
+	return r.msg.Analyse()
 }
 
 func (r *Message) ReadBody() ([]byte, error) {

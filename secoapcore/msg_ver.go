@@ -56,6 +56,6 @@ func ToVer(v string) (Ver, error) {
 }
 
 // ValidateVer validates the ver for UDP. (0 <= typ <= 3)
-func ValidateVer(typ Type) bool {
+func ValidateVer(typ Ver) bool {
 	return typ >= 0 && typ <= (1<<2-1)
 }

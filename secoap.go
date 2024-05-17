@@ -24,21 +24,21 @@ import (
 )
 
 const (
-	Version0 = 0 // Version0 版本0，私有SECOAP协议
-	Version1 = 1 // Version1 版本1，标准COAP协议
-	Version2 = 2 // Version2 版本2，私有SECOAP协议, 默认使用此协议
+	Version0 secoapcore.Ver = 0 // Version0 版本0，私有SECOAP协议
+	Version1 secoapcore.Ver = 1 // Version1 版本1，标准COAP协议
+	Version2 secoapcore.Ver = 2 // Version2 版本2，私有SECOAP协议, 默认使用此协议
 )
 
 // Secoap Secoap协议实例
 type Secoap struct {
-	Version uint8
+	Version secoapcore.Ver
 	Message *message.Message
 
 	ctx *context.Context
 }
 
 // NewSecoap 创建一个Secoap协议实例
-func NewSecoap(ver uint8) *Secoap {
+func NewSecoap(ver secoapcore.Ver) *Secoap {
 	if ver > 2 {
 		ver = Version2
 	}
