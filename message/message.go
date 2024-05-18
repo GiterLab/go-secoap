@@ -552,6 +552,16 @@ func (r *Message) toMessage() (secoapcore.Message, error) {
 	return m, nil
 }
 
+func (r *Message) ToSecoapCoreMessage() (secoapcore.Message, error) {
+	payload, err := r.ReadBody()
+	if err != nil {
+		return secoapcore.Message{}, err
+	}
+	m := r.msg
+	m.Payload = payload
+	return m, nil
+}
+
 func (r *Message) MarshalWithEncoder(encoder Encoder) ([]byte, error) {
 	msg, err := r.toMessage()
 	if err != nil {
