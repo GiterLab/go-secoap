@@ -59,6 +59,14 @@ func (s *Secoap) GetContext() context.Context {
 	return *s.ctx
 }
 
+func (s *Secoap) SetVersion(ver secoapcore.Ver) {
+	s.Version = ver
+}
+
+func (s *Secoap) GetVersion() secoapcore.Ver {
+	return s.Version
+}
+
 func (s *Secoap) SetMessage(msg *message.Message) {
 	s.Message = msg
 }
