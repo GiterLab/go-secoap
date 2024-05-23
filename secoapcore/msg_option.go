@@ -192,7 +192,7 @@ var CoapOptionDefs = map[OptionID]OptionDef{
 	CheckCRC32:    {ValueFormat: ValueUint, MinLen: 0, MaxLen: 4},
 	EncoderType:   {ValueFormat: ValueUint, MinLen: 0, MaxLen: 4},
 	EncoderID:     {ValueFormat: ValueUint, MinLen: 0, MaxLen: 4},
-	PackageNumber: {ValueFormat: ValueUint, MinLen: 0, MaxLen: 2},
+	PackageNumber: {ValueFormat: ValueUint, MinLen: 0, MaxLen: 4},
 }
 
 // VerifyOptLen checks whether valueLen is within (min, max) length limits for given option.
@@ -510,4 +510,3 @@ func (o *Option) Unmarshal(optionDefs map[OptionID]OptionDef, optionID OptionID,
 func (o Option) String() string {
 	return fmt.Sprintf("ID:%s(%d) Value:%v(% 02X)", o.ID, o.ID, o.Value, o.ToBytes())
 }
-
