@@ -93,6 +93,7 @@ const (
 	CheckCRC32    OptionID = 65004
 	EncoderType   OptionID = 65005
 	EncoderID     OptionID = 65006
+	Flags         OptionID = 65007
 	PackageNumber OptionID = 65100
 )
 
@@ -126,6 +127,7 @@ var optionIDToString = map[OptionID]string{
 	CheckCRC32:    "CheckCRC32",
 	EncoderType:   "EncoderType",
 	EncoderID:     "EncoderID",
+	Flags:         "Flags",
 	PackageNumber: "PackageNumber",
 }
 
@@ -192,6 +194,7 @@ var CoapOptionDefs = map[OptionID]OptionDef{
 	CheckCRC32:    {ValueFormat: ValueUint, MinLen: 0, MaxLen: 4},
 	EncoderType:   {ValueFormat: ValueUint, MinLen: 0, MaxLen: 4},
 	EncoderID:     {ValueFormat: ValueUint, MinLen: 0, MaxLen: 4},
+	Flags:         {ValueFormat: ValueUint, MinLen: 0, MaxLen: 4},
 	PackageNumber: {ValueFormat: ValueUint, MinLen: 0, MaxLen: 4},
 }
 
